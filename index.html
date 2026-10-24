@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <!-- AUTHENTICATION PAGE -->
+    <div id="auth-page" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-wallet text-indigo-600 text-4xl mb-2"></i>
+                <h1 id="auth-title" class="text-2xl font-bold text-slate-900">Smart Expense Tracker</h1>
+                <p id="auth-subtitle" class="text-sm text-slate-500">Manage your finances effortlessly</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="login-email" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Password</label>
+                    <input type="password" id="login-password" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Login</button>
+                
+                <!-- Bottom Sign Up Link -->
+                <p class="text-sm text-center text-slate-500 mt-4">
+                    Don't have an account? <a href="javascript:void(0)" onclick="toggleAuthMode('register')" class="text-indigo-600 font-semibold hover:underline">Sign Up</a>
+                </p>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Full Name</label>
+                    <input type="text" id="reg-name" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="reg-email" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Password</label>
+                    <input type="password" id="reg-password" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Sign Up</button>
+                
+                <!-- Bottom Login Link -->
+                <p class="text-sm text-center text-slate-500 mt-4">
+                    Already have an account? <a href="javascript:void(0)" onclick="toggleAuthMode('login')" class="text-indigo-600 font-semibold hover:underline">Login</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP LAYOUT (Hidden by default) -->
+    <div id="app-container" class="hidden min-h-screen flex flex-col">
+        <!-- Top Horizontal Navigation Bar -->
+        <header class="bg-slate-900 text-slate-300 px-6 py-4 flex flex-wrap justify-between items-center shadow-md">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-wallet text-indigo-400 text-2xl"></i>
+                <span class="text-lg font-bold text-white">ExpenseTracker</span>
+            </div>
+            <nav class="flex flex-wrap items-center gap-2">
+                <button onclick="switchPage('dashboard')" id="nav-dashboard" class="flex items-center space-x-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm transition"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></button>
+                <button onclick="switchPage('expenses')" id="nav-expenses" class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-sm transition"><i class="fa-solid fa-receipt"></i><span>Add & Manage</span></button>
+                <button onclick="switchPage('budgets')" id="nav-budgets" class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-sm transition"><i class="fa-solid fa-bullseye"></i><span>Budgets</span></button>
+                <button onclick="switchPage('analytics')" id="nav-analytics" class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-sm transition"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></button>
+                <button onclick="switchPage('data')" id="nav-data" class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-sm transition"><i class="fa-solid fa-database"></i><span>Data & CSV</span></button>
+            </nav>
+            <div class="flex items-center space-x-4 text-sm mt-2 sm:mt-0">
+                <div>
+                    <span class="text-slate-400">User:</span> <span id="user-display-name" class="font-semibold text-white"></span>
+                </div>
+                <button onclick="handleLogout()" class="flex items-center space-x-1 bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <!-- 1. DASHBOARD PAGE -->
+            <section id="page-dashboard" class="space-y-6">
+                <h1 class="text-2xl font-bold text-slate-800">Financial Dashboard</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Total Expenses</p>
+                        <h3 id="dash-total" class="text-3xl font-bold text-slate-800 mt-2">₹0.00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Monthly Budget</p>
+                        <h3 id="dash-budget" class="text-3xl font-bold text-indigo-600 mt-2">₹0.00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Remaining Budget</p>
+                        <h3 id="dash-remaining" class="text-3xl font-bold text-emerald-600 mt-2">₹0.00</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Transactions</h3>
+                    <div id="dash-recent-list" class="space-y-3"></div>
+                </div>
+            </section>
+
+            <!-- 2. ADD & MANAGE EXPENSES PAGE -->
+            <section id="page-expenses" class="space-y-6 hidden">
+                <h1 class="text-2xl font-bold text-slate-800">Manage Expenses</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
+                        <h3 id="form-title" class="text-lg font-semibold text-slate-800 mb-4">Add Expense</h3>
+                        <form id="expense-form" onsubmit="saveExpense(event)" class="space-y-4">
+                            <input type="hidden" id="edit-index" value="">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Amount (₹)</label>
+                                <input type="number" step="0.01" id="exp-amount" required class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Category</label>
+                                <select id="exp-category" class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="Food & Dining">Food & Dining</option>
+                                    <option value="Rent & Utilities">Rent & Utilities</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Date</label>
+                                <input type="date" id="exp-date" required class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Description</label>
+                                <input type="text" id="exp-desc" placeholder="e.g., Grocery shopping" class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Save Expense</button>
+                        </form>
+                    </div>
+                    <!-- Table & Filters -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between gap-4">
+                            <input type="text" id="filter-search" oninput="renderExpensesTable()" placeholder="Search description..." class="px-3 py-2 border rounded-lg outline-none text-sm w-full sm:w-64">
+                            <select id="filter-category" onchange="renderExpensesTable()" class="px-3 py-2 border rounded-lg outline-none text-sm">
+                                <option value="">All Categories</option>
+                                <option value="Food & Dining">Food & Dining</option>
+                                <option value="Rent & Utilities">Rent & Utilities</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b text-xs font-semibold text-slate-500 uppercase bg-slate-50">
+                                        <th class="p-3">Date</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Description</th>
+                                        <th class="p-3">Amount</th>
+                                        <th class="p-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expenses-table-body" class="text-sm divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. BUDGETS PAGE -->
+            <section id="page-budgets" class="space-y-6 hidden">
+                <h1 class="text-2xl font-bold text-slate-800">Monthly Budget Management</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Set Monthly Budget</h3>
+                        <form onsubmit="saveBudget(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Budget Limit (₹)</label>
+                                <input type="number" step="0.01" id="budget-input" required class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Update Budget</button>
+                        </form>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                        <p class="text-slate-500 font-medium mb-2">Current Budget Progress</p>
+                        <h2 id="budget-progress-text" class="text-3xl font-bold text-slate-800 mb-4">₹0 / ₹0</h2>
+                        <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+                            <div id="budget-progress-bar" class="bg-indigo-600 h-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. ANALYTICS PAGE -->
+            <section id="page-analytics" class="space-y-6 hidden">
+                <h1 class="text-2xl font-bold text-slate-800">Smart Analytics & Insights</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Last 7 Days Spending</p>
+                        <h3 id="insight-7days" class="text-2xl font-bold text-indigo-600 mt-2">₹0.00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Last 15 Days Spending</p>
+                        <h3 id="insight-15days" class="text-2xl font-bold text-indigo-600 mt-2">₹0.00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium">Top Spending Category</p>
+                        <h3 id="insight-topcat" class="text-2xl font-bold text-indigo-600 mt-2">-</h3>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Category-wise Breakdown</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Monthly Trends</h3>
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. DATA MANAGEMENT PAGE -->
+            <section id="page-data" class="space-y-6 hidden">
+                <h1 class="text-2xl font-bold text-slate-800">Data Management & Backup</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-2">Export Data (CSV)</h3>
+                        <p class="text-sm text-slate-500 mb-4">Download all your logged expenses as a CSV file for backups.</p>
+                        <button onclick="exportCSV()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"><i class="fa-solid fa-download mr-2"></i>Download CSV</button>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-2">Import Data (CSV)</h3>
+                        <p class="text-sm text-slate-500 mb-4">Upload a CSV file containing date, category, description, and amount.</p>
+                        <input type="file" id="csv-file-input" accept=".csv" class="mb-4 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        <button onclick="importCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 transition"><i class="fa-solid fa-upload mr-2"></i>Import CSV</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let currentUser = localStorage.getItem('currentUser') || null;
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        let budget = parseFloat(localStorage.getItem('budget')) || 5000;
+        let categoryChartInstance = null;
+        let monthlyChartInstance = null;
+
+        if (currentUser) {
+            showApp();
+        }
+
+        function toggleAuthMode(mode) {
+            const loginForm = document.getElementById('form-login');
+            const registerForm = document.getElementById('form-register');
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+
+            if (mode === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                title.innerText = "Create Account";
+                subtitle.innerText = "Sign up to get started";
+            } else {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                title.innerText = "Smart Expense Tracker";
+                subtitle.innerText = "Manage your finances effortlessly";
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-password').value;
+            
+            localStorage.setItem('user_email', email);
+            localStorage.setItem('user_pass', pass);
+            localStorage.setItem('user_name', name);
+            alert('Sign up successful! Please login.');
+            toggleAuthMode('login');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            
+            const savedEmail = localStorage.getItem('user_email') || 'admin@example.com';
+            const savedPass = localStorage.getItem('user_pass') || 'password';
+            const savedName = localStorage.getItem('user_name') || 'Admin User';
+
+            if (email === savedEmail && pass === savedPass) {
+                currentUser = savedName;
+                localStorage.setItem('currentUser', currentUser);
+                showApp();
+            } else {
+                alert('Invalid email or password! (Default: admin@example.com / password)');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('auth-page').classList.remove('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('auth-page').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = currentUser;
+            document.getElementById('exp-date').valueAsDate = new Date();
+            updateDashboard();
+            renderExpensesTable();
+            updateBudgetUI();
+            renderAnalytics();
+        }
+
+        function switchPage(pageId) {
+            const pages = ['dashboard', 'expenses', 'budgets', 'analytics', 'data'];
+            pages.forEach(p => {
+                document.getElementById(`page-${p}`).classList.add('hidden');
+                document.getElementById(`nav-${p}`).className = "flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-sm transition text-slate-300";
+            });
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            document.getElementById(`nav-${pageId}`).className = "flex items-center space-x-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm transition";
+            
+            if (pageId === 'analytics') renderAnalytics();
+            if (pageId === 'dashboard') updateDashboard();
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            const index = document.getElementById('edit-index').value;
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const category = document.getElementById('exp-category').value;
+            const date = document.getElementById('exp-date').value;
+            const description = document.getElementById('exp-desc').value;
+
+            const expenseObj = { amount, category, date, description };
+
+            if (index === "") {
+                expenses.push(expenseObj);
+            } else {
+                expenses[index] = expenseObj;
+                document.getElementById('edit-index').value = "";
+                document.getElementById('form-title').innerText = "Add Expense";
+            }
+
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            document.getElementById('expense-form').reset();
+            document.getElementById('exp-date').valueAsDate = new Date();
+            renderExpensesTable();
+            updateDashboard();
+        }
+
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expenses-table-body');
+            tbody.innerHTML = "";
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const catFilter = document.getElementById('filter-category').value;
+
+            const filtered = expenses.filter((item) => {
+                const matchSearch = item.description.toLowerCase().includes(search);
+                const matchCat = catFilter === "" || item.category === catFilter;
+                return matchSearch && matchCat;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No expenses found</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((item) => {
+                const actualIndex = expenses.indexOf(item);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b">
+                        <td class="p-3 text-slate-600">${item.date}</td>
+                        <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600">${item.category}</span></td>
+                        <td class="p-3 text-slate-800">${item.description}</td>
+                        <td class="p-3 font-semibold text-slate-900">₹${item.amount.toFixed(2)}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="editExpense(${actualIndex})" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteExpense(${actualIndex})" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function editExpense(index) {
+            const item = expenses[index];
+            document.getElementById('edit-index').value = index;
+            document.getElementById('exp-amount').value = item.amount;
+            document.getElementById('exp-category').value = item.category;
+            document.getElementById('exp-date').value = item.date;
+            document.getElementById('exp-desc').value = item.description;
+            document.getElementById('form-title').innerText = "Edit Expense";
+            switchPage('expenses');
+        }
+
+        function deleteExpense(index) {
+            if (confirm("Are you sure you want to delete this expense?")) {
+                expenses.splice(index, 1);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                renderExpensesTable();
+                updateDashboard();
+            }
+        }
+
+        function updateDashboard() {
+            const total = expenses.reduce((sum, item) => sum + item.amount, 0);
+            const remaining = budget - total;
+
+            document.getElementById('dash-total').innerText = `₹${total.toFixed(2)}`;
+            document.getElementById('dash-budget').innerText = `₹${budget.toFixed(2)}`;
+            const remEl = document.getElementById('dash-remaining');
+            remEl.innerText = `₹${remaining.toFixed(2)}`;
+            remEl.className = remaining >= 0 ? "text-3xl font-bold text-emerald-600 mt-2" : "text-3xl font-bold text-rose-600 mt-2";
+
+            const recentContainer = document.getElementById('dash-recent-list');
+            recentContainer.innerHTML = "";
+            const recent = [...expenses].reverse().slice(0, 5);
+            if (recent.length === 0) {
+                recentContainer.innerHTML = `<p class="text-sm text-slate-400">No recent transactions.</p>`;
+                return;
+            }
+            recent.forEach(item => {
+                recentContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg text-sm">
+                        <div>
+                            <span class="font-semibold text-slate-800">${item.description || item.category}</span>
+                            <span class="block text-xs text-slate-400">${item.date}</span>
+                        </div>
+                        <span class="font-bold text-slate-900">₹${item.amount.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function saveBudget(e) {
+            e.preventDefault();
+            budget = parseFloat(document.getElementById('budget-input').value);
+            localStorage.setItem('budget', budget);
+            updateBudgetUI();
+            updateDashboard();
+            alert('Budget updated successfully!');
+        }
+
+        function updateBudgetUI() {
+            document.getElementById('budget-input').value = budget;
+            const total = expenses.reduce((sum, item) => sum + item.amount, 0);
+            const percent = Math.min(Math.round((total / budget) * 100), 100);
+            document.getElementById('budget-progress-text').innerText = `₹${total.toFixed(2)} / ₹${budget.toFixed(2)} (${percent}%)`;
+            const bar = document.getElementById('budget-progress-bar');
+            bar.style.width = `${percent}%`;
+            bar.className = percent > 90 ? "bg-rose-600 h-full transition-all duration-500" : "bg-indigo-600 h-full transition-all duration-500";
+        }
+
+        function renderAnalytics() {
+            const now = new Date();
+            const past7 = new Date(); past7.setDate(now.getDate() - 7);
+            const past15 = new Date(); past15.setDate(now.getDate() - 15);
+
+            let sum7 = 0, sum15 = 0;
+            const catTotals = {};
+
+            expenses.forEach(item => {
+                const itemDate = new Date(item.date);
+                if (itemDate >= past7) sum7 += item.amount;
+                if (itemDate >= past15) sum15 += item.amount;
+                catTotals[item.category] = (catTotals[item.category] || 0) + item.amount;
+            });
+
+            document.getElementById('insight-7days').innerText = `₹${sum7.toFixed(2)}`;
+            document.getElementById('insight-15days').innerText = `₹${sum15.toFixed(2)}`;
+            
+            let topCat = "-";
+            let maxAmt = 0;
+            for (let cat in catTotals) {
+                if (catTotals[cat] > maxAmt) {
+                    maxAmt = catTotals[cat];
+                    topCat = cat;
+                }
+            }
+            document.getElementById('insight-topcat').innerText = topCat;
+
+            const catCtx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            categoryChartInstance = new Chart(catCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(catTotals),
+                    datasets: [{
+                        data: Object.values(catTotals),
+                        backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']
+                    }]
+                }
+            });
+
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            const monthlyData = {};
+            expenses.forEach(item => {
+                const month = item.date.substring(0, 7);
+                monthlyData[month] = (monthlyData[month] || 0) + item.amount;
+            });
+
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+            monthlyChartInstance = new Chart(monthlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(monthlyData),
+                    datasets: [{
+                        label: 'Monthly Expenses (₹)',
+                        data: Object.values(monthlyData),
+                        backgroundColor: '#6366f1'
+                    }]
+                }
+            });
+        }
+
+        function exportCSV() {
+            let csv = 'Date,Category,Description,Amount\n';
+            expenses.forEach(item => {
+                csv += `"${item.date}","${item.category}","${item.description}","${item.amount}"\n`;
+            });
+            let blob = new Blob([csv], { type: 'text/csv' });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'expenses_backup.csv');
+            a.click();
+        }
+
+        function importCSV() {
+            let fileInput = document.getElementById('csv-file-input');
+            let file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a CSV file first.');
+                return;
+            }
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let lines = e.target.result.split('\n');
+                for (let i = 1; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    if (!line) continue;
+                    let cols = line.split(',');
+                    if (cols.length >= 4) {
+                        let date = cols[0].replace(/"/g, '');
+                        let category = cols[1].replace(/"/g, '');
+                        let description = cols[2].replace(/"/g, '');
+                        let amount = parseFloat(cols[3].replace(/"/g, ''));
+                        if (!isNaN(amount)) {
+                            expenses.push({ date, category, description, amount });
+                        }
+                    }
+                }
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                updateDashboard();
+                renderExpensesTable();
+                alert('CSV imported successfully!');
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
